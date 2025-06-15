@@ -1,8 +1,10 @@
 package org.example
 
 import kotlinx.coroutines.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.sync.Mutex
 
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -165,14 +167,42 @@ suspend fun main() {
 
     println("======================================================================================================")
     println("End CoRoutine  with timeout")
-    runBlocking {
+    /*runBlocking {
         withTimeout(1000) {
             println("Launch 1")
             delay(2000)
             println("It will never be printed")
         }
-    }
+    }*/
     println("FINISH")
+
+    println("=============================================================================================")
+    println("Counter with concurrent access to variable")
+
+    val c = 100
+    val r = 1000
+    //var counter = AtomicInteger(0)
+    var counter = 0
+    val mutex = Mutex()
+    val timeExec = measureTimeMillis {
+        withContext(Dispatchers.Default) {
+            repeat(c) {
+                launch {
+                    repeat(r) {
+                     //   counter.incrementAndGet()
+                        mutex.lock()
+
+                        try {
+                            counter++
+                        } finally {mutex.unlock()}
+                    }
+                }
+            }
+        }
+    }
+    println("Completed actions ${c * r } in $timeExec ms")
+    println("Counter = $counter")
+
 }
 
 private suspend fun exec(i: Int) {
